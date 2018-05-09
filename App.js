@@ -1,7 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View, Button } from 'react-native';
 import { Audio, Permissions } from 'expo';
-import SoundRecorder from 'react-native-sound-recorder';
 
 
 export default class App extends React.Component {
@@ -16,20 +15,14 @@ export default class App extends React.Component {
     }
     if (status === 'granted') {
       //await Audio.setIsEnabledAsync(true)
-      const soundObject = new Audio.Sound();
+      const soundObject = await new Audio.Sound();
+      const recorder = await new Audio.Recording();
       await Audio.setIsEnabledAsync(true)
       try {
         await soundObject.loadAsync(require('./assets/sounds/test.m4a'));
         console.log("Prepering recording")
-        SoundRecorder.start(SoundRecorder.PATH_CACHE + '/test.mp4')
-          .then(function () {
-            console.log('started recording');
-            SoundRecorder.stop()
-              .then(function (path) {
-                console.log('stopped recording, audio file saved at: ' + path);
-              });
-          });
-        await recording.startAsync();
+        await recorder.prepareToRecordAsync()
+        await recorder.startAsync();
         const result = await recordingInstance.stopAndUnloadAsync();
         console.log(result)
         // You are now recording!

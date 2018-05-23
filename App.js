@@ -17,7 +17,7 @@ export default class App extends React.Component {
       Prepare audio play
       */
       const soundObject = await new Audio.Sound();
-      await soundObject.loadAsync(require('./assets/sounds/sine3.wav'))
+      await soundObject.loadAsync(require('./assets/sounds/sine1.wav'))
 
       /*
       Prepare audio recording

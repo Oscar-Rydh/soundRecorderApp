@@ -2,35 +2,56 @@ import React from 'react';
 import { StyleSheet, Text, View, Button } from 'react-native';
 import { Audio, Permissions, FileSystem, MailComposer } from 'expo';
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 export default class App extends React.Component {
 
+  state = {
+    buttonEnabled: true
+  }
+
   async play_sound() {
+    this.setState({ buttonEnabled: false })
+
     const { Permissions } = Expo;
     let { status } = await Permissions.getAsync(Permissions.AUDIO_RECORDING);
     console.log(status)
-    if (status !== 'granted') {
+    while (status !== 'granted') {
       status = await Permissions.askAsync(Permissions.AUDIO_RECORDING);
     }
     if (status === 'granted') {
-      /*
-      Prepare audio play
-      */
-      const soundObject = await new Audio.Sound();
-      await soundObject.loadAsync(require('./assets/sounds/sine1.wav'))
-
-      /*
-      Prepare audio recording
-      */
-      const recorder = await new Audio.Recording();
+      /**
+       * Setup global parameters for Audio
+       */
       await Audio.setIsEnabledAsync(true)
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_DO_NOT_MIX,
         playsInSilentModeIOS: true,
-        shouldDuckAndroid: true,
-        interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DO_NOT_MIX
+        shouldDuckAndroid: false,
+        interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DUCK_OTHERS
       });
+
+
+
+      /*
+      Prepare audio play
+      */
+      const soundObject = await new Audio.Sound();
+      await soundObject.loadAsync(require('./assets/sounds/sine1.mp3'))
+      if (soundObject != null) {
+        await soundObject.setPositionAsync(0);
+      }
+      // await soundObject.setIsMutedAsync(0.0);
+      // await soundObject.setVolumeAsync(1.0);
+
+
+      /*
+      Prepare audio recording
+      */
+      const recorder = await new Audio.Recording();
       await recorder.prepareToRecordAsync({
         ios: {
           extension: '.wav',
@@ -56,31 +77,33 @@ export default class App extends React.Component {
         }
       });
 
-      // Start audio recording after 5 seconds
-      setTimeout( () => recorder.startAsync(), 5000);
+      await sleep(5000);
 
-      // Play the audio sweep in 500 ms
-      setTimeout(() => soundObject.playAsync(), 5100)
+      await recorder.startAsync();
 
-      // Stop audio recording
-      setTimeout(async () => {
-        await recorder.stopAndUnloadAsync();
+      await sleep(10);
 
-        // Send the file
-        const newURI = FileSystem.cacheDirectory + 'randomNameHere.wav'
+      await soundObject.playAsync()
 
-        await FileSystem.moveAsync({
-          from: recorder.getURI(),
-          to: FileSystem.cacheDirectory + 'randomNameHere.wav'
-        })
+      await sleep(300);
 
-        MailComposer.composeAsync({
-          recipients: ["oscar.rydh.93@gmail.com", "joel.klint@gmail.com"],
-          subject: "Mobile Computing Recording",
-          attachments: [newURI]
-        })
+      await recorder.stopAndUnloadAsync();
 
-      }, 6000);
+      // Send the file
+      const newURI = FileSystem.cacheDirectory + 'randomNameHere.wav'
+
+      await FileSystem.moveAsync({
+        from: recorder.getURI(),
+        to: FileSystem.cacheDirectory + 'randomNameHere.wav'
+      })
+
+      MailComposer.composeAsync({
+        recipients: ["oscar.rydh.93@gmail.com", "joel.klint@gmail.com"],
+        subject: "Mobile Computing Recording",
+        attachments: [newURI]
+      })
+
+      this.setState({ buttonEnabled: true })
     }
 
   }
@@ -92,6 +115,7 @@ export default class App extends React.Component {
         <Button
           title="Record"
           onPress={() => this.play_sound()}
+          disabled={!this.state.buttonEnabled}
         />
       </View>
     );

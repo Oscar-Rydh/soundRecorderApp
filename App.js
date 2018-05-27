@@ -9,13 +9,14 @@ function sleep(ms) {
 export default class App extends React.Component {
 
   state = {
-    buttonEnabled: true
+    buttonEnabled: true,
+    result: '-'
   }
 
 
   async uploadAudioAsync(uri) {
     console.log("Uploading " + uri);
-    let apiUrl = 'http://143.248.180.48:3000/estimation';
+    let apiUrl = 'http://143.248.214.35:3000/estimation';
     let uriParts = uri.split('.');
     let fileType = uriParts[uriParts.length - 1];
   
@@ -134,7 +135,10 @@ export default class App extends React.Component {
       })
       */
       let uri = await recorder.getURI();
-      await this.uploadAudioAsync(uri);
+      await this.uploadAudioAsync(uri)
+        .then(result => result.json())
+        .then(result => this.setState({result: result.result}))
+        .catch(err => console.log(err))
     
 
 //      await this.sendSound(recorder);
@@ -162,6 +166,7 @@ export default class App extends React.Component {
           onPress={() => this.play_sound()}
           disabled={!this.state.buttonEnabled}
         />
+        <Text> Result: {this.state.result} </Text>
       </View>
     );
   }

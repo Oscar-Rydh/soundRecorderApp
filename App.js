@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, Button } from 'react-native';
+import { StyleSheet, Text, View, Button, AsyncStorage } from 'react-native';
 import { Audio, Permissions, FileSystem, MailComposer } from 'expo';
 
 function sleep(ms) {
@@ -12,6 +12,32 @@ export default class App extends React.Component {
     buttonEnabled: true
   }
 
+
+  async uploadAudioAsync(uri) {
+    console.log("Uploading " + uri);
+    let apiUrl = 'http://143.248.180.48:3000/estimation';
+    let uriParts = uri.split('.');
+    let fileType = uriParts[uriParts.length - 1];
+  
+    let formData = new FormData();
+    formData.append('file', {
+      uri,
+      name: `recording.${fileType}`,
+      type: `audio/x-${fileType}`,
+    });
+  
+    let options = {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'multipart/form-data',
+      },
+    };
+  
+    return fetch(apiUrl, options);
+  }
+  
   async play_sound() {
     this.setState({ buttonEnabled: false })
 
@@ -89,19 +115,38 @@ export default class App extends React.Component {
 
       await recorder.stopAndUnloadAsync();
 
-      // Send the file
-      const newURI = FileSystem.cacheDirectory + 'randomNameHere.wav'
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_DO_NOT_MIX,
+        playsInSilentModeIOS: true,
+        shouldDuckAndroid: false,
+        interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DUCK_OTHERS
+      });
 
+
+      // Send the file
+      
+      const newURI = FileSystem.documentDirectory + 'randomNameHere.wav'
+      /*
       await FileSystem.moveAsync({
         from: recorder.getURI(),
-        to: FileSystem.cacheDirectory + 'randomNameHere.wav'
+        to: newURI
       })
+      */
+      let uri = await recorder.getURI();
+      await this.uploadAudioAsync(uri);
+    
 
+//      await this.sendSound(recorder);
+
+
+/*
       MailComposer.composeAsync({
         recipients: ["oscar.rydh.93@gmail.com", "joel.klint@gmail.com"],
         subject: "Mobile Computing Recording",
         attachments: [newURI]
       })
+*/      
 
       this.setState({ buttonEnabled: true })
     }

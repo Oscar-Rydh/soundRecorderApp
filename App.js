@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View, Button, AsyncStorage } from 'react-native';
 import { Audio, Permissions, FileSystem, MailComposer } from 'expo';
+import { REMOTE_SERVER_URL } from "./config";
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -16,17 +17,19 @@ export default class App extends React.Component {
 
   async uploadAudioAsync(uri) {
     console.log("Uploading " + uri);
-    let apiUrl = 'http://143.248.214.35:3000/estimation';
+    let BASE_URL = REMOTE_SERVER_URL;
+    let apiUrl = BASE_URL + ':3000/estimation';
+    console.log(apiUrl)
     let uriParts = uri.split('.');
     let fileType = uriParts[uriParts.length - 1];
-  
+
     let formData = new FormData();
     formData.append('file', {
       uri,
       name: `recording.${fileType}`,
       type: `audio/x-${fileType}`,
     });
-  
+
     let options = {
       method: 'POST',
       body: formData,
@@ -35,10 +38,10 @@ export default class App extends React.Component {
         'Content-Type': 'multipart/form-data',
       },
     };
-  
+
     return fetch(apiUrl, options);
   }
-  
+
   async play_sound() {
     this.setState({ buttonEnabled: false })
 
@@ -126,7 +129,7 @@ export default class App extends React.Component {
 
 
       // Send the file
-      
+
       const newURI = FileSystem.documentDirectory + 'randomNameHere.wav'
       /*
       await FileSystem.moveAsync({
@@ -137,20 +140,20 @@ export default class App extends React.Component {
       let uri = await recorder.getURI();
       await this.uploadAudioAsync(uri)
         .then(result => result.json())
-        .then(result => this.setState({result: result.result}))
+        .then(result => this.setState({ result: result.result }))
         .catch(err => console.log(err))
-    
-
-//      await this.sendSound(recorder);
 
 
-/*
-      MailComposer.composeAsync({
-        recipients: ["oscar.rydh.93@gmail.com", "joel.klint@gmail.com"],
-        subject: "Mobile Computing Recording",
-        attachments: [newURI]
-      })
-*/      
+      //      await this.sendSound(recorder);
+
+
+      /*
+            MailComposer.composeAsync({
+              recipients: ["oscar.rydh.93@gmail.com", "joel.klint@gmail.com"],
+              subject: "Mobile Computing Recording",
+              attachments: [newURI]
+            })
+      */
 
       this.setState({ buttonEnabled: true })
     }
